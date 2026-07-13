@@ -62,7 +62,7 @@ export async function runMonitoringCycle() {
           if (!telegram) throw new Error("Telegram 渠道尚未配置。")
           const token = await decryptSecret(telegram.encrypted_token)
           const condition = rule.triggerType === "interval"
-            ? `跨越整数倍价位 ${alertLevels.join("、")}（粒度 ${rule.interval ?? rule.targetPrice}，重置范围 ±${rule.intervalResetRange}）`
+            ? `${Number(currentPrice) > Number(rule.lastPrice) ? "上穿" : "下穿"}整数倍价位 ${alertLevels.join("、")}（粒度 ${rule.interval ?? rule.targetPrice}，重置范围 ±${rule.intervalResetRange}）`
             : `${rule.direction === "above" ? "上穿" : "下穿"} ${rule.targetPrice}`
           await sendTelegramMessage({
             token,
