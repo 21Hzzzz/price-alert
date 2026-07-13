@@ -3,7 +3,7 @@ import { resolve } from "node:path"
 import { handleAuthRequest } from "./app/lib/auth-api.server"
 import { hasValidSession, isAuthEnabled } from "./app/lib/auth.server"
 import { handleApiRequest } from "./app/lib/bun-api.server"
-import { isIpBlocked } from "./app/lib/db.server"
+import { isIpBlocked, recordPanelAccessLog } from "./app/lib/db.server"
 import { blockedIpResponse, getClientIp } from "./app/lib/ip-access.server"
 import { startMonitor } from "./app/lib/monitor.service.server"
 
@@ -26,7 +26,11 @@ Bun.serve({
   port,
   async fetch(request) {
     const url = new URL(request.url)
-    if (isIpBlocked(getClientIp(request))) return blockedIpResponse(request)
+    const ip = getClientIp(request)
+    if (isIpBlocked(ip)) {
+      recordPanelAccessLog({ ip, event: "ip_blocked", status: "blocked", path: url.pathname })
+      return blockedIpResponse(request)
+    }
     if (url.pathname.startsWith("/api/auth/")) return handleAuthRequest(request, url.pathname)
 
     if (isAuthEnabled() && !hasValidSession(request) && !isStaticAsset(url.pathname)) {
@@ -34,6 +38,10 @@ Bun.serve({
         return Response.json({ error: "Unauthorized." }, { status: 401 })
       }
       if (url.pathname !== "/login") return Response.redirect(new URL("/login", url), 302)
+    }
+
+    if (hasValidSession(request) && request.method === "GET" && (url.pathname === "/price-monitoring" || url.pathname === "/access-logs")) {
+      recordPanelAccessLog({ ip, event: "panel_access", status: "success", path: url.pathname })
     }
 
     if (url.pathname.startsWith("/api/")) return handleApiRequest(request, url.pathname)

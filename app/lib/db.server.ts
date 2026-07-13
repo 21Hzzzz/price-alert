@@ -6,8 +6,10 @@ import type {
   AlertDirection,
   AlertRule,
   AlertTriggerType,
+  AccessLogEvent,
   FwAlertSettingsStatus,
   NotificationChannel,
+  PanelAccessLog,
   TelegramSettingsStatus,
 } from "~/lib/price-alert.types"
 import {
@@ -69,6 +71,17 @@ db.run(`
     blocked_until INTEGER NOT NULL
   )
 `)
+db.run(`
+  CREATE TABLE IF NOT EXISTS panel_access_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ip TEXT NOT NULL,
+    event TEXT NOT NULL,
+    status TEXT NOT NULL,
+    path TEXT NOT NULL,
+    created_at TEXT NOT NULL
+  )
+`)
+db.run("CREATE INDEX IF NOT EXISTS panel_access_logs_created_at ON panel_access_logs (created_at DESC)")
 
 const ruleColumns = db.query<{ name: string }, []>("PRAGMA table_info(alert_rules)").all()
 if (!ruleColumns.some((column) => column.name === "channels")) {
@@ -395,4 +408,45 @@ export function recordFailedLogin(ip: string, now = Date.now()) {
 
 export function clearFailedLogins(ip: string) {
   db.query("DELETE FROM auth_login_attempts WHERE ip = ?").run(ip)
+}
+
+type PanelAccessLogRow = {
+  id: number
+  ip: string
+  event: AccessLogEvent
+  status: "success" | "failure" | "blocked"
+  path: string
+  created_at: string
+}
+
+export function recordPanelAccessLog(input: {
+  ip: string
+  event: AccessLogEvent
+  status: "success" | "failure" | "blocked"
+  path: string
+}) {
+  db.query(
+    "INSERT INTO panel_access_logs (ip, event, status, path, created_at) VALUES (?, ?, ?, ?, ?)"
+  ).run(input.ip, input.event, input.status, input.path, new Date().toISOString())
+  db.run(
+    `DELETE FROM panel_access_logs
+     WHERE id NOT IN (SELECT id FROM panel_access_logs ORDER BY id DESC LIMIT 1000)`
+  )
+}
+
+export function listPanelAccessLogs(limit = 200): PanelAccessLog[] {
+  const safeLimit = Math.min(Math.max(Math.floor(limit), 1), 1_000)
+  return db
+    .query<PanelAccessLogRow, [number]>(
+      "SELECT id, ip, event, status, path, created_at FROM panel_access_logs ORDER BY id DESC LIMIT ?"
+    )
+    .all(safeLimit)
+    .map((row) => ({
+      id: row.id,
+      ip: row.ip,
+      event: row.event,
+      status: row.status,
+      path: row.path,
+      createdAt: row.created_at,
+    }))
 }

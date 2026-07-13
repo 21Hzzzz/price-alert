@@ -7,6 +7,7 @@ import {
   verifyPanelPassword,
 } from "../app/lib/auth.server"
 import { handleAuthRequest } from "../app/lib/auth-api.server"
+import { listPanelAccessLogs } from "../app/lib/db.server"
 
 test("verifies a salted panel password", () => {
   process.env.PANEL_PASSWORD_HASH = hashPanelPassword("correct horse battery staple")
@@ -33,6 +34,7 @@ test("login and logout APIs set secure session cookies", async () => {
   }), "/api/auth/login")
   expect(login.status).toBe(200)
   expect(login.headers.get("set-cookie")).toContain("HttpOnly")
+  expect(listPanelAccessLogs().some((log) => log.ip === headers["x-forwarded-for"] && log.event === "login_success")).toBe(true)
 
   const logout = await handleAuthRequest(new Request("https://example.test/api/auth/logout", { method: "POST", headers }), "/api/auth/logout")
   expect(logout.headers.get("set-cookie")).toContain("Max-Age=0")

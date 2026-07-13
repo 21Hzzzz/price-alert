@@ -19,7 +19,7 @@ import {
 export default function AppLayout() {
   const location = useLocation()
   const navigate = useNavigate()
-  const pageTitle = location.pathname === "/price-monitoring" ? "价格监控" : "控制台"
+  const pageTitle = location.pathname === "/price-monitoring" ? "价格监控" : location.pathname === "/access-logs" ? "访问日志" : "控制台"
 
   return (
     <SidebarProvider>

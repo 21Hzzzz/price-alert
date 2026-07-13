@@ -1,5 +1,6 @@
 import * as React from "react"
-import { ChartNoAxesCombined, Radar } from "lucide-react"
+import { ChartNoAxesCombined, Radar, ScrollText } from "lucide-react"
+import { useLocation } from "react-router"
 
 import {
   Sidebar,
@@ -15,16 +16,23 @@ import {
   SidebarRail,
 } from "~/components/ui/sidebar"
 
-const navigation = [
-  {
-    title: "监控",
-    items: [
-      { title: "价格监控", url: "/price-monitoring", icon: Radar, isActive: true },
-    ],
-  },
-]
-
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const location = useLocation()
+  const navigation = [
+    {
+      title: "监控",
+      items: [
+        { title: "价格监控", url: "/price-monitoring", icon: Radar, isActive: location.pathname === "/price-monitoring" },
+      ],
+    },
+    {
+      title: "系统",
+      items: [
+        { title: "访问日志", url: "/access-logs", icon: ScrollText, isActive: location.pathname === "/access-logs" },
+      ],
+    },
+  ]
+
   return (
     <Sidebar {...props}>
       <SidebarHeader>

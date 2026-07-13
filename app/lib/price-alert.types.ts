@@ -47,3 +47,14 @@ export type MarketSnapshot = {
   monitoredAt: string
   monitorError: string | null
 }
+
+export type AccessLogEvent = "panel_access" | "login_success" | "login_failure" | "ip_blocked" | "logout"
+
+export type PanelAccessLog = {
+  id: number
+  ip: string
+  event: AccessLogEvent
+  status: "success" | "failure" | "blocked"
+  path: string
+  createdAt: string
+}

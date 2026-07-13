@@ -6,6 +6,7 @@ import {
   getRule,
   getFwAlertSettingsStatusWithSecret,
   getTelegramSettingsStatusWithSecret,
+  listPanelAccessLogs,
   listRules,
   updateRule,
 } from "~/lib/db.server"
@@ -61,6 +62,9 @@ export async function handleApiRequest(request: Request, pathname: string) {
     }
     if (pathname === "/api/market/snapshot" && request.method === "GET") {
       return Response.json(getMonitorSnapshot())
+    }
+    if (pathname === "/api/access-logs" && request.method === "GET") {
+      return Response.json({ logs: listPanelAccessLogs() })
     }
     if (pathname === "/api/telegram-settings" && request.method === "GET") {
       return Response.json({ telegram: await getTelegramSettingsStatusWithSecret() })
