@@ -79,7 +79,7 @@ Usage:
 EOF
 }
 
-install() {
+install_app() {
   local domain branch="$DEFAULT_BRANCH"
   while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -152,7 +152,7 @@ main() {
   local command="${1:-}"
   shift || true
   case "$command" in
-    install) install "$@" ;;
+    install) install_app "$@" ;;
     update) [[ $# -eq 0 ]] || die "update takes no options."; update ;;
     uninstall) uninstall "$@" ;;
     *) usage; exit 1 ;;
