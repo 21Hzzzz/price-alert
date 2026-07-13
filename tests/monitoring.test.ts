@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test"
 
-import { didCrossTarget, isPositivePrice, isWithinCooldown } from "../app/lib/monitoring"
+import { didCrossTarget, getCrossedIntervalLevels, isPositivePrice, isWithinCooldown } from "../app/lib/monitoring"
 
 test("validates positive target prices", () => {
   expect(isPositivePrice("0.0001")).toBe(true)
@@ -17,6 +17,12 @@ test("only detects a real upward crossing", () => {
 test("only detects a real downward crossing", () => {
   expect(didCrossTarget({ direction: "below", previousPrice: "101", currentPrice: "100", targetPrice: "100" })).toBe(true)
   expect(didCrossTarget({ direction: "below", previousPrice: "100", currentPrice: "99", targetPrice: "100" })).toBe(false)
+})
+
+test("detects every crossed integer-multiple level", () => {
+  expect(getCrossedIntervalLevels({ previousPrice: "71950", currentPrice: "73100", interval: "1000" })).toEqual(["72000", "73000"])
+  expect(getCrossedIntervalLevels({ previousPrice: "73100", currentPrice: "71950", interval: "1000" })).toEqual(["73000", "72000"])
+  expect(getCrossedIntervalLevels({ previousPrice: "72000", currentPrice: "72100", interval: "1000" })).toEqual([])
 })
 
 test("applies a local phone cooldown for sixty-five seconds", () => {

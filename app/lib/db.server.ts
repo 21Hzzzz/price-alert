@@ -5,6 +5,7 @@ import { Database } from "bun:sqlite"
 import type {
   AlertDirection,
   AlertRule,
+  AlertTriggerType,
   FwAlertSettingsStatus,
   NotificationChannel,
   TelegramSettingsStatus,
@@ -32,7 +33,9 @@ db.run(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     symbol TEXT NOT NULL,
     direction TEXT NOT NULL CHECK (direction IN ('above', 'below')),
+    trigger_type TEXT NOT NULL DEFAULT 'target' CHECK (trigger_type IN ('target', 'interval')),
     target_price TEXT NOT NULL,
+    interval TEXT,
     channels TEXT NOT NULL DEFAULT '["telegram"]',
     enabled INTEGER NOT NULL DEFAULT 1,
     last_price TEXT,
@@ -72,12 +75,20 @@ if (!ruleColumns.some((column) => column.name === "channels")) {
 if (!ruleColumns.some((column) => column.name === "last_phone_triggered_at")) {
   db.run("ALTER TABLE alert_rules ADD COLUMN last_phone_triggered_at TEXT")
 }
+if (!ruleColumns.some((column) => column.name === "trigger_type")) {
+  db.run("ALTER TABLE alert_rules ADD COLUMN trigger_type TEXT NOT NULL DEFAULT 'target'")
+}
+if (!ruleColumns.some((column) => column.name === "interval")) {
+  db.run("ALTER TABLE alert_rules ADD COLUMN interval TEXT")
+}
 
 type RuleRow = {
   id: number
   symbol: string
   direction: AlertDirection
+  trigger_type: string
   target_price: string
+  interval: string | null
   channels: string
   enabled: number
   last_price: string | null
@@ -104,8 +115,10 @@ function toRule(row: RuleRow): AlertRule {
   return {
     id: row.id,
     symbol: row.symbol,
+    triggerType: row.trigger_type === "interval" ? "interval" : "target",
     direction: row.direction,
     targetPrice: row.target_price,
+    interval: row.interval,
     channels,
     enabled: Boolean(row.enabled),
     lastPrice: row.last_price,
@@ -133,17 +146,19 @@ export function getRule(id: number) {
 
 export function createRule(input: {
   symbol: string
+  triggerType: AlertTriggerType
   direction: AlertDirection
   targetPrice: string
+  interval: string | null
   channels: NotificationChannel[]
 }) {
   const now = new Date().toISOString()
   const result = db
     .query(
-      `INSERT INTO alert_rules (symbol, direction, target_price, channels, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?)`
+      `INSERT INTO alert_rules (symbol, direction, trigger_type, target_price, interval, channels, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
     )
-    .run(input.symbol, input.direction, input.targetPrice, JSON.stringify(input.channels), now, now)
+    .run(input.symbol, input.direction, input.triggerType, input.targetPrice, input.interval, JSON.stringify(input.channels), now, now)
   return getRule(Number(result.lastInsertRowid))!
 }
 
@@ -151,8 +166,10 @@ export function updateRule(
   id: number,
   input: Partial<{
     symbol: string
+    triggerType: AlertTriggerType
     direction: AlertDirection
     targetPrice: string
+    interval: string | null
     channels: NotificationChannel[]
     enabled: boolean
   }>
@@ -161,15 +178,17 @@ export function updateRule(
   if (!existing) return null
 
   const symbol = input.symbol ?? existing.symbol
+  const triggerType = input.triggerType ?? existing.triggerType
   const direction = input.direction ?? existing.direction
   const targetPrice = input.targetPrice ?? existing.targetPrice
+  const interval = "interval" in input ? input.interval ?? null : existing.interval
   const channels = input.channels ?? existing.channels
   const enabled = input.enabled ?? existing.enabled
   db.query(
     `UPDATE alert_rules
-     SET symbol = ?, direction = ?, target_price = ?, channels = ?, enabled = ?, updated_at = ?
+     SET symbol = ?, direction = ?, trigger_type = ?, target_price = ?, interval = ?, channels = ?, enabled = ?, updated_at = ?
      WHERE id = ?`
-  ).run(symbol, direction, targetPrice, JSON.stringify(channels), Number(enabled), new Date().toISOString(), id)
+  ).run(symbol, direction, triggerType, targetPrice, interval, JSON.stringify(channels), Number(enabled), new Date().toISOString(), id)
   return getRule(id)
 }
 

@@ -3,6 +3,7 @@ import { isEncryptionReady } from "~/lib/crypto.server"
 import {
   createRule,
   deleteRule,
+  getRule,
   getFwAlertSettingsStatusWithSecret,
   getTelegramSettingsStatusWithSecret,
   listRules,
@@ -10,7 +11,7 @@ import {
 } from "~/lib/db.server"
 import { isPositivePrice } from "~/lib/monitoring"
 import { getMonitorSnapshot } from "~/lib/monitor.service.server"
-import type { AlertDirection } from "~/lib/price-alert.types"
+import type { AlertDirection, AlertTriggerType } from "~/lib/price-alert.types"
 import type { NotificationChannel } from "~/lib/price-alert.types"
 import { triggerFwAlert } from "~/lib/fwalert.server"
 import { getFwAlertUrl, saveFwAlertConfiguration } from "~/lib/fwalert-settings.server"
@@ -26,6 +27,10 @@ function error(message: string, status = 400) {
 
 function isDirection(value: unknown): value is AlertDirection {
   return value === "above" || value === "below"
+}
+
+function isTriggerType(value: unknown): value is AlertTriggerType {
+  return value === "target" || value === "interval"
 }
 
 function isChannels(value: unknown): value is NotificationChannel[] {
@@ -88,14 +93,25 @@ export async function handleApiRequest(request: Request, pathname: string) {
       return Response.json({ rules: listRules() })
     }
     if (pathname === "/api/alert-rules" && request.method === "POST") {
-      const body = (await request.json()) as { symbol?: string; direction?: AlertDirection; targetPrice?: string; channels?: NotificationChannel[] }
+      const body = (await request.json()) as { symbol?: string; triggerType?: AlertTriggerType; direction?: AlertDirection; targetPrice?: string; interval?: string; channels?: NotificationChannel[] }
       const symbol = body.symbol?.trim().toUpperCase()
+      const triggerType = body.triggerType ?? "target"
       const targetPrice = body.targetPrice?.trim()
-      if (!symbol || !isDirection(body.direction) || !targetPrice || !isPositivePrice(targetPrice) || !isChannels(body.channels)) {
-        return error("请填写有效的交易对、方向、正数目标价，并至少选择一个通知渠道。")
+      const interval = body.interval?.trim()
+      if (!symbol || !isTriggerType(triggerType) || !isChannels(body.channels)
+        || (triggerType === "target" && (!isDirection(body.direction) || !targetPrice || !isPositivePrice(targetPrice)))
+        || (triggerType === "interval" && (!interval || !isPositivePrice(interval)))) {
+        return error("请填写有效的交易对、触发条件、正数目标价或粒度，并至少选择一个通知渠道。")
       }
       if (!await validateSpotSymbol(symbol)) return error("交易对不是可交易的 Binance 现货标的。")
-      return Response.json({ rule: createRule({ symbol, direction: body.direction, targetPrice, channels: body.channels }) })
+      return Response.json({ rule: createRule({
+        symbol,
+        triggerType,
+        direction: triggerType === "target" ? body.direction! : "above",
+        targetPrice: triggerType === "target" ? targetPrice! : interval!,
+        interval: triggerType === "interval" ? interval! : null,
+        channels: body.channels,
+      }) })
     }
 
     const match = pathname.match(/^\/api\/alert-rules\/(\d+)$/)
@@ -105,16 +121,29 @@ export async function handleApiRequest(request: Request, pathname: string) {
         return deleteRule(id) ? Response.json({ ok: true }) : error("规则不存在。", 404)
       }
       if (request.method === "PATCH") {
-        const body = (await request.json()) as { symbol?: string; direction?: AlertDirection; targetPrice?: string; enabled?: boolean; channels?: NotificationChannel[] }
-        if (body.direction !== undefined && !isDirection(body.direction)) return error("无效的告警方向。")
-        if (body.targetPrice !== undefined && !isPositivePrice(body.targetPrice)) return error("目标价必须是正数。")
+        const body = (await request.json()) as { symbol?: string; triggerType?: AlertTriggerType; direction?: AlertDirection; targetPrice?: string; interval?: string; enabled?: boolean; channels?: NotificationChannel[] }
+        const existing = getRule(id)
+        if (!existing) return error("规则不存在。", 404)
+        const triggerType = body.triggerType ?? existing.triggerType
+        const direction = body.direction ?? existing.direction
+        const targetPrice = body.targetPrice?.trim() ?? existing.targetPrice
+        const interval = body.interval?.trim() ?? existing.interval
+        if (!isTriggerType(triggerType)) return error("无效的触发条件。")
+        if (triggerType === "target" && (!isDirection(direction) || !isPositivePrice(targetPrice))) return error("请填写有效的方向和正数目标价。")
+        if (triggerType === "interval" && (!interval || !isPositivePrice(interval))) return error("粒度必须是正数。")
         if (body.channels !== undefined && !isChannels(body.channels)) return error("请至少选择一个通知渠道。")
         if (body.symbol) {
           body.symbol = body.symbol.trim().toUpperCase()
           if (!await validateSpotSymbol(body.symbol)) return error("交易对不是可交易的 Binance 现货标的。")
         }
-        const rule = updateRule(id, body)
-        return rule ? Response.json({ rule }) : error("规则不存在。", 404)
+        const rule = updateRule(id, {
+          ...body,
+          triggerType,
+          direction: triggerType === "target" ? direction : "above",
+          targetPrice: triggerType === "target" ? targetPrice : interval!,
+          interval: triggerType === "interval" ? interval : null,
+        })
+        return Response.json({ rule: rule! })
       }
     }
     return error("Not found.", 404)

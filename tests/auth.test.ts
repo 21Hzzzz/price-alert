@@ -39,7 +39,7 @@ test("login and logout APIs set secure session cookies", async () => {
 test("blocks an IP for 24 hours after ten failed password attempts", async () => {
   process.env.PANEL_SESSION_SECRET = "test-session-secret"
   process.env.PANEL_PASSWORD_HASH = hashPanelPassword("password")
-  const headers = { "content-type": "application/json", "x-forwarded-for": "203.0.113.99" }
+  const headers = { "content-type": "application/json", "x-forwarded-for": `2001:db8::${Date.now().toString(16)}` }
 
   for (let attempt = 1; attempt < 10; attempt++) {
     const response = await handleAuthRequest(new Request("https://example.test/api/auth/login", {

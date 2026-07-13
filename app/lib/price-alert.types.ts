@@ -1,11 +1,14 @@
 export type AlertDirection = "above" | "below"
+export type AlertTriggerType = "target" | "interval"
 export type NotificationChannel = "telegram" | "phone"
 
 export type AlertRule = {
   id: number
   symbol: string
+  triggerType: AlertTriggerType
   direction: AlertDirection
   targetPrice: string
+  interval: string | null
   channels: NotificationChannel[]
   enabled: boolean
   lastPrice: string | null

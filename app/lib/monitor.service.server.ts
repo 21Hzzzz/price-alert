@@ -7,7 +7,7 @@ import {
 } from "~/lib/db.server"
 import { decryptSecret } from "~/lib/crypto.server"
 import { triggerFwAlert } from "~/lib/fwalert.server"
-import { didCrossTarget, isWithinCooldown } from "~/lib/monitoring"
+import { didCrossTarget, getCrossedIntervalLevels, isWithinCooldown } from "~/lib/monitoring"
 import type { MarketSnapshot } from "~/lib/price-alert.types"
 import { sendTelegramMessage } from "~/lib/telegram.server"
 
@@ -28,14 +28,20 @@ export async function runMonitoringCycle() {
       const currentPrice = prices.get(rule.symbol)
       if (!currentPrice) continue
 
-      const crossed = didCrossTarget({
-        direction: rule.direction,
-        previousPrice: rule.lastPrice,
-        currentPrice,
-        targetPrice: rule.targetPrice,
-      })
+      const crossedLevels = rule.triggerType === "interval"
+        ? getCrossedIntervalLevels({
+          previousPrice: rule.lastPrice,
+          currentPrice,
+          interval: rule.interval ?? rule.targetPrice,
+        })
+        : didCrossTarget({
+          direction: rule.direction,
+          previousPrice: rule.lastPrice,
+          currentPrice,
+          targetPrice: rule.targetPrice,
+        }) ? [rule.targetPrice] : []
 
-      if (!crossed) {
+      if (crossedLevels.length === 0) {
         updateRuleMarketState(rule.id, { lastPrice: currentPrice, lastError: null })
         continue
       }
@@ -45,11 +51,13 @@ export async function runMonitoringCycle() {
         attempts.push({ channel: "telegram", promise: (async () => {
           if (!telegram) throw new Error("Telegram 渠道尚未配置。")
           const token = await decryptSecret(telegram.encrypted_token)
-          const verb = rule.direction === "above" ? "上穿" : "下穿"
+          const condition = rule.triggerType === "interval"
+            ? `跨越整数倍价位 ${crossedLevels.join("、")}（粒度 ${rule.interval ?? rule.targetPrice}）`
+            : `${rule.direction === "above" ? "上穿" : "下穿"} ${rule.targetPrice}`
           await sendTelegramMessage({
             token,
             chatId: telegram.chat_id,
-            text: `Price Alert\n${rule.symbol} ${verb} ${rule.targetPrice}\n当前价格: ${currentPrice}`,
+            text: `Price Alert\n${rule.symbol} ${condition}\n当前价格: ${currentPrice}`,
           })
         })() })
       }
