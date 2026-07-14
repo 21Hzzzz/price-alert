@@ -24,7 +24,7 @@ ensure_dependencies() {
 }
 
 external_interface() {
-  ip route get 1.1.1.1 | awk '{ for (index = 1; index <= NF; index++) if ($index == "dev") { print $(index + 1); exit } }'
+  ip route get 1.1.1.1 | awk '{ for (field = 1; field <= NF; field++) if ($field == "dev") { print $(field + 1); exit } }'
 }
 
 refresh_ipset() {
