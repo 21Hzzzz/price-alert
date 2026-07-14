@@ -87,9 +87,9 @@ configure_cloudflare_origin_lockdown() {
     apt-get update
     apt-get install -y ipset
     info "Configuring Cloudflare-only origin access"
-    "$APP_DIR/scripts/cloudflare-origin-lockdown.sh" apply "$APP_DIR"
+    bash "$APP_DIR/scripts/cloudflare-origin-lockdown.sh" apply "$APP_DIR"
   else
-    "$APP_DIR/scripts/cloudflare-origin-lockdown.sh" remove "$APP_DIR"
+    bash "$APP_DIR/scripts/cloudflare-origin-lockdown.sh" remove "$APP_DIR"
   fi
 }
 
@@ -197,8 +197,8 @@ uninstall() {
   [[ "${1:-}" != "--purge-data" || $# -eq 1 ]] || die "Unknown uninstall option."
   [[ "${1:-}" == "--purge-data" ]] && purge_data=true
   [[ -d "$APP_DIR" ]] || die "No installation found at $APP_DIR."
-  if [[ -x "$APP_DIR/scripts/cloudflare-origin-lockdown.sh" ]]; then
-    "$APP_DIR/scripts/cloudflare-origin-lockdown.sh" remove "$APP_DIR"
+  if [[ -f "$APP_DIR/scripts/cloudflare-origin-lockdown.sh" ]]; then
+    bash "$APP_DIR/scripts/cloudflare-origin-lockdown.sh" remove "$APP_DIR"
   fi
   info "Stopping containers"
   (cd "$APP_DIR" && docker compose down --remove-orphans)

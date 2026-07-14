@@ -126,7 +126,7 @@ Wants=network-online.target
 
 [Service]
 Type=oneshot
-ExecStart=$APP_DIR/scripts/cloudflare-origin-lockdown.sh apply $APP_DIR
+ExecStart=/usr/bin/env bash $APP_DIR/scripts/cloudflare-origin-lockdown.sh apply $APP_DIR
 ExecStartPost=-/usr/bin/docker compose --project-directory $APP_DIR -f $APP_DIR/docker-compose.yml restart caddy
 EOF
 
