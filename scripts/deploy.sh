@@ -50,13 +50,24 @@ generate_password_hash() {
 
 read_panel_password() {
   local password confirmation
-  read -r -s -p "Panel password: " password
-  echo >&2
-  read -r -s -p "Confirm panel password: " confirmation
-  echo >&2
-  [[ -n "$password" ]] || die "Panel password cannot be empty."
-  [[ "$password" == "$confirmation" ]] || die "Passwords do not match."
-  printf '%s' "$password"
+  while true; do
+    read -r -s -p "Panel password: " password
+    echo >&2
+    read -r -s -p "Confirm panel password: " confirmation
+    echo >&2
+
+    if [[ -z "$password" ]]; then
+      echo "Panel password cannot be empty. Please try again." >&2
+      continue
+    fi
+    if [[ "$password" != "$confirmation" ]]; then
+      echo "Passwords do not match. Please enter the password again." >&2
+      continue
+    fi
+
+    printf '%s' "$password"
+    return
+  done
 }
 
 read_domain() {
