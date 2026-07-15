@@ -1,8 +1,14 @@
 export const WEI_PER_NATIVE = 10n ** 18n
+export const STRICT_NATIVE_SWEEP_CHAIN_IDS = [1, 56, 137] as const
+
+export function supportsStrictNativeSweep(chainId: number) {
+  return (STRICT_NATIVE_SWEEP_CHAIN_IDS as readonly number[]).includes(chainId)
+}
 
 export type SweepAmounts = {
   gasFeeWei: bigint
   transferableWei: bigint
+  remainingWei: bigint
   canSweep: boolean
 }
 
@@ -12,9 +18,11 @@ export function calculateSweepAmounts(
   gasLimit: bigint,
 ): SweepAmounts {
   const gasFeeWei = gasPriceWei * gasLimit
-  const transferableWei = balanceWei > gasFeeWei ? balanceWei - gasFeeWei : 0n
+  const canSweep = balanceWei > 0n && balanceWei >= gasFeeWei
+  const transferableWei = canSweep ? balanceWei - gasFeeWei : 0n
+  const remainingWei = canSweep ? balanceWei - gasFeeWei - transferableWei : balanceWei
 
-  return { gasFeeWei, transferableWei, canSweep: transferableWei > 0n }
+  return { gasFeeWei, transferableWei, remainingWei, canSweep }
 }
 
 export function isEvmAddress(value: string) {
@@ -34,4 +42,10 @@ export function formatNativeAmount(value: bigint, maximumFractionDigits = 6) {
     .replace(/0+$/, "")
 
   return fraction ? `${whole}.${fraction}` : whole.toString()
+}
+
+export function formatExactNativeAmount(value: bigint) {
+  const whole = value / WEI_PER_NATIVE
+  const fraction = (value % WEI_PER_NATIVE).toString().padStart(18, "0")
+  return `${whole}.${fraction}`
 }

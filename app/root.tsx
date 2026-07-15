@@ -22,7 +22,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         {children}
-        <Toaster position="top-right" theme="light" />
+        <Toaster position="bottom-right" theme="light" />
         <ScrollRestoration />
         <Scripts />
       </body>
