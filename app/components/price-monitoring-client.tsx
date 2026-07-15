@@ -503,12 +503,11 @@ export function PriceMonitoringClient() {
       </section>
 
       <Card className="min-h-72">
-        <CardHeader className="flex-row items-center justify-between space-y-0">
-          <div>
-            <CardTitle>监控规则</CardTitle>
-            <CardDescription>导入会新增规则而不会删除当前配置；仅在条件首次满足时发送提醒。</CardDescription>
+        <CardHeader className="flex flex-col gap-3 space-y-0 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0"><div className="flex items-center gap-2"><CardTitle>监控规则</CardTitle><Badge variant="outline">{rules.filter((rule) => rule.enabled).length} active</Badge></div>
+            <CardDescription className="mt-1">导入会新增规则而不会删除当前配置；仅在条件首次满足时发送提醒。</CardDescription>
           </div>
-          <div className="flex flex-wrap items-center justify-end gap-2"><Button size="sm" variant="outline" onClick={exportRules}><Download /> 导出</Button><Button size="sm" variant="outline" onClick={() => importInputRef.current?.click()} disabled={saving}><Upload /> 导入</Button><Badge variant="outline">{rules.filter((rule) => rule.enabled).length} active</Badge></div>
+          <div className="flex shrink-0 items-center gap-2 sm:justify-end"><Button size="sm" variant="outline" onClick={exportRules}><Download /> 导出</Button><Button size="sm" variant="outline" onClick={() => importInputRef.current?.click()} disabled={saving}><Upload /> 导入</Button></div>
         </CardHeader>
         <CardContent>
           {rules.length === 0 ? (
@@ -526,7 +525,7 @@ export function PriceMonitoringClient() {
                   <TableCell>{formatPrice(rule.lastPrice)}</TableCell>
                   <TableCell><Badge variant="outline" className={rule.triggerType === "interval" ? "" : rule.triggerType === "basket" ? "border-violet-500/30 bg-violet-500/10 text-violet-700 dark:text-violet-300" : rule.direction === "above" ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" : "border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-300"}>{rule.triggerType === "interval" ? "整数倍价位" : rule.triggerType === "basket" ? "篮子偏离" : rule.direction === "above" ? "上穿" : "下穿"}</Badge></TableCell>
                   <TableCell>{rule.triggerType === "interval" ? `每 ${formatPrice(rule.interval ?? rule.targetPrice)} / ±${formatPrice(rule.intervalResetRange)}` : rule.triggerType === "basket" ? `±${rule.deviationPercent}% · ${rule.basketMembers.length} 个成员` : formatPrice(rule.targetPrice)}</TableCell>
-                  <TableCell><div className="flex gap-1">{rule.channels.map((channel) => <Badge key={channel} variant="outline">{channel === "telegram" ? "Telegram" : "电话"}</Badge>)}</div></TableCell>
+                  <TableCell><div className="flex gap-1">{rule.channels.map((channel) => <Badge key={channel} variant="outline" className={channel === "telegram" ? "border-sky-500/30 bg-sky-500/10 text-sky-700 dark:text-sky-300" : "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"}>{channel === "telegram" ? "Telegram" : "电话"}</Badge>)}</div></TableCell>
                   <TableCell><Switch checked={rule.enabled} onCheckedChange={(enabled) => void patchRule(rule.id, { enabled })} aria-label={`切换 ${rule.symbol} 规则`} /></TableCell>
                   <TableCell className="text-muted-foreground">{rule.lastError ? <span className="text-destructive" title={rule.lastError}>推送失败</span> : formatDate(rule.lastTriggeredAt)}</TableCell>
                   <TableCell><div className="flex gap-1"><Button size="icon-xs" variant="ghost" onClick={() => openEdit(rule)} aria-label="编辑规则"><Pencil /></Button><Button size="icon-xs" variant="ghost" onClick={() => void removeRule(rule.id)} aria-label="删除规则"><Trash2 /></Button></div></TableCell>
