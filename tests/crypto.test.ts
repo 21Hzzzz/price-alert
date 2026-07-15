@@ -3,7 +3,7 @@ import { expect, test } from "bun:test"
 import { decryptSecret, encryptSecret, maskSecret } from "../app/lib/crypto.server"
 
 test("encrypts Telegram secrets without retaining plaintext", async () => {
-  process.env.PRICE_ALERT_ENCRYPTION_KEY = "test-key-for-price-alert"
+  process.env.DASHBOARD_ENCRYPTION_KEY = "test-key-for-dashboard"
   const secret = "123456:telegram-secret-token"
   const encrypted = await encryptSecret(secret)
 

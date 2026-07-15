@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-APP_DIR="${2:-/opt/price-alert}"
-STATE_DIR="/etc/price-alert"
+APP_DIR="${2:-/opt/dashboard}"
+STATE_DIR="/etc/dashboard"
 STATE_FILE="$STATE_DIR/cloudflare-origin-lockdown.env"
-SERVICE_NAME="price-alert-cloudflare-origin-lockdown"
-IPSET_V4="price_alert_cloudflare4"
-IPSET_V6="price_alert_cloudflare6"
-RULE_COMMENT="price-alert-cloudflare-origin-lockdown"
+SERVICE_NAME="dashboard-cloudflare-origin-lockdown"
+IPSET_V4="dashboard_cloudflare4"
+IPSET_V6="dashboard_cloudflare6"
+RULE_COMMENT="dashboard-cloudflare-origin-lockdown"
 
 die() { echo "Error: $*" >&2; exit 1; }
 info() { echo "==> $*"; }
@@ -120,7 +120,7 @@ delete_drop_rule() {
 install_systemd_timer() {
   cat > "/etc/systemd/system/${SERVICE_NAME}.service" <<EOF
 [Unit]
-Description=Refresh Price Alert Cloudflare origin firewall rules
+Description=Refresh Dashboard Cloudflare origin firewall rules
 After=network-online.target docker.service
 Wants=network-online.target
 
@@ -132,7 +132,7 @@ EOF
 
   cat > "/etc/systemd/system/${SERVICE_NAME}.timer" <<EOF
 [Unit]
-Description=Refresh Price Alert Cloudflare origin firewall rules daily
+Description=Refresh Dashboard Cloudflare origin firewall rules daily
 
 [Timer]
 OnBootSec=2min

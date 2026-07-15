@@ -10,13 +10,13 @@ function fromBase64(value: string) {
 }
 
 export function isEncryptionReady() {
-  return Boolean(process.env.PRICE_ALERT_ENCRYPTION_KEY)
+  return Boolean(process.env.DASHBOARD_ENCRYPTION_KEY)
 }
 
 async function getKey() {
-  const secret = process.env.PRICE_ALERT_ENCRYPTION_KEY
+  const secret = process.env.DASHBOARD_ENCRYPTION_KEY
   if (!secret) {
-    throw new Error("PRICE_ALERT_ENCRYPTION_KEY is required to save Telegram settings.")
+    throw new Error("DASHBOARD_ENCRYPTION_KEY is required to save Telegram settings.")
   }
 
   const digest = await crypto.subtle.digest("SHA-256", encoder.encode(secret))

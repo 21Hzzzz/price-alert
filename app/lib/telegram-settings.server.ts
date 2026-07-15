@@ -7,7 +7,7 @@ import {
 
 export async function saveTelegramConfiguration(token: string, chatId: string) {
   if (!isEncryptionReady()) {
-    throw new Error("缺少 PRICE_ALERT_ENCRYPTION_KEY，无法安全保存 Token。")
+    throw new Error("缺少 DASHBOARD_ENCRYPTION_KEY，无法安全保存 Token。")
   }
   saveTelegramSettings(await encryptSecret(token), chatId)
   return getTelegramSettingsStatusWithSecret()

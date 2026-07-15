@@ -5,7 +5,7 @@ import {
   timingSafeEqual,
 } from "node:crypto"
 
-const COOKIE_NAME = "price_alert_session"
+const COOKIE_NAME = "dashboard_session"
 const SESSION_SECONDS = 60 * 60 * 24 * 7
 
 function isAuthenticationExplicitlyDisabledForDevelopment() {

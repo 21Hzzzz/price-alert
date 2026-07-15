@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-APP_DIR="/opt/price-alert"
+APP_DIR="/opt/dashboard"
 ENV_FILE="$APP_DIR/.env"
-REPOSITORY_URL="https://github.com/21Hzzzz/price-alert.git"
+REPOSITORY_URL="https://github.com/21Hzzzz/dashboard.git"
 DEFAULT_BRANCH="master"
 
 die() { echo "Error: $*" >&2; exit 1; }
@@ -100,7 +100,7 @@ validate_caddyfile() {
 
 start_application() {
   validate_caddyfile
-  info "Building and starting Price Alert"
+  info "Building and starting Dashboard"
   (cd "$APP_DIR" && docker compose up -d --build --remove-orphans)
   # The trusted proxy include is a bind mount, so force Caddy to reload it on every update.
   (cd "$APP_DIR" && docker compose restart caddy)
@@ -153,7 +153,7 @@ install_app() {
   umask 077
   cat > "$ENV_FILE" <<EOF
 DOMAIN=$domain
-PRICE_ALERT_ENCRYPTION_KEY=$(openssl rand -hex 32)
+DASHBOARD_ENCRYPTION_KEY=$(openssl rand -hex 32)
 PANEL_PASSWORD_HASH=$hash
 PANEL_SESSION_SECRET=$(openssl rand -hex 32)
 PANEL_COOKIE_SECURE=true

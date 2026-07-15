@@ -8,7 +8,7 @@ import { validateFwAlertUrl } from "~/lib/fwalert.server"
 
 export async function saveFwAlertConfiguration(url: string) {
   if (!isEncryptionReady()) {
-    throw new Error("缺少 PRICE_ALERT_ENCRYPTION_KEY，无法安全保存电话链接。")
+    throw new Error("缺少 DASHBOARD_ENCRYPTION_KEY，无法安全保存电话链接。")
   }
   const validatedUrl = validateFwAlertUrl(url)
   saveFwAlertSettings(await encryptSecret(validatedUrl))

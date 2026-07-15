@@ -104,7 +104,7 @@ export async function runMonitoringCycle() {
           await sendTelegramMessage({
             token,
             chatId: telegram.chat_id,
-            text: `Price Alert\n${rule.market === "okx" ? "OKX 现货" : "Binance 现货"} · ${rule.symbol} ${condition}\n当前价格: ${currentPrice}`,
+            text: `Dashboard\n${rule.market === "okx" ? "OKX 现货" : "Binance 现货"} · ${rule.symbol} ${condition}\n当前价格: ${currentPrice}`,
           })
         })() })
       }

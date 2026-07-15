@@ -51,7 +51,7 @@ export default function Login() {
       <Card className="w-full max-w-sm">
         <CardHeader>
           <div className="mb-2 flex size-9 items-center justify-center bg-primary text-primary-foreground"><KeyRound className="size-4" /></div>
-          <CardTitle>Price Alert</CardTitle>
+          <CardTitle>Dashboard</CardTitle>
           <CardDescription>请输入面板密码以继续。</CardDescription>
         </CardHeader>
         <CardContent>

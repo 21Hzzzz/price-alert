@@ -1,4 +1,4 @@
-# Price Alert
+# Dashboard
 
 Binance 现货价格监控面板，支持 Telegram 与 FwAlert 电话通知。
 
@@ -11,7 +11,15 @@ Binance 现货价格监控面板，支持 Telegram 与 FwAlert 电话通知。
 ### 普通安装
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/21Hzzzz/price-alert/master/scripts/deploy.sh) install
+bash <(curl -fsSL https://raw.githubusercontent.com/21Hzzzz/dashboard/master/scripts/deploy.sh) install
+```
+
+### 从旧版 Price Alert 重新部署
+
+本项目现使用 `/opt/dashboard`、`DASHBOARD_ENCRYPTION_KEY` 和新的数据库文件名。若旧版部署中没有需要保留的数据，请先在 VPS 上停止并清理旧版，再运行上方的新安装命令：
+
+```bash
+bash /opt/price-alert/scripts/deploy.sh uninstall --purge-data
 ```
 
 ### Cloudflare 源站锁定安装
@@ -19,23 +27,23 @@ bash <(curl -fsSL https://raw.githubusercontent.com/21Hzzzz/price-alert/master/s
 若域名已开启 Cloudflare Proxy，使用下列命令。脚本会仅允许 Cloudflare IPv4/IPv6 网段访问 VPS 的 80/443，并每日同步网段；源站 IP 将不能再被直接访问。
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/21Hzzzz/price-alert/master/scripts/deploy.sh) install --cloudflare-origin-lockdown
+bash <(curl -fsSL https://raw.githubusercontent.com/21Hzzzz/dashboard/master/scripts/deploy.sh) install --cloudflare-origin-lockdown
 ```
 
-安装脚本会隐藏输入面板密码、安装 Docker（如需要）、生成加密及会话密钥，并将应用部署至 `/opt/price-alert`。生产环境缺少面板认证配置时，应用会拒绝启动，而不会开放面板。
+安装脚本会隐藏输入面板密码、安装 Docker（如需要）、生成加密及会话密钥，并将应用部署至 `/opt/dashboard`。生产环境缺少面板认证配置时，应用会拒绝启动，而不会开放面板。
 
 ### 更新
 
 普通更新会保留 `.env`、`data/` 和 `caddy/`：
 
 ```bash
-bash /opt/price-alert/scripts/deploy.sh update
+bash /opt/dashboard/scripts/deploy.sh update
 ```
 
 为已有安装启用 Cloudflare 源站锁定：
 
 ```bash
-bash /opt/price-alert/scripts/deploy.sh update --cloudflare-origin-lockdown
+bash /opt/dashboard/scripts/deploy.sh update --cloudflare-origin-lockdown
 ```
 
 启用后，更新会先同步 Cloudflare IP 网段并重载 Caddy 的可信代理配置。若无法下载网段或域名未解析到 Cloudflare，更新会停止，保留上一次成功的防火墙规则。
@@ -51,7 +59,7 @@ bash /opt/price-alert/scripts/deploy.sh update --cloudflare-origin-lockdown
 DNS 生效后，以 root 执行：
 
 ```bash
-bash /opt/price-alert/scripts/deploy.sh change-domain --domain alert.example.com
+bash /opt/dashboard/scripts/deploy.sh change-domain --domain alert.example.com
 ```
 
 该命令会备份 `.env`、保留 `data/`、面板密码与 Caddy 数据，并重建服务以让 Caddy 为新域名申请 HTTPS 证书。旧域名不会继续提供面板访问。
@@ -61,13 +69,13 @@ bash /opt/price-alert/scripts/deploy.sh change-domain --domain alert.example.com
 卸载容器并保留数据；如曾启用源站锁定，也会清理本项目创建的防火墙规则和 systemd 同步任务：
 
 ```bash
-bash /opt/price-alert/scripts/deploy.sh uninstall
+bash /opt/dashboard/scripts/deploy.sh uninstall
 ```
 
 彻底卸载并删除数据、配置和证书：
 
 ```bash
-bash /opt/price-alert/scripts/deploy.sh uninstall --purge-data
+bash /opt/dashboard/scripts/deploy.sh uninstall --purge-data
 ```
 
 ## Cloudflare 建议
@@ -85,7 +93,7 @@ bun run dev
 
 本地开发若确实需要关闭认证，显式设置 `PANEL_AUTH_DISABLED=true`。该开关在生产环境无效。
 
-SQLite 默认保存在 `./data/price-alert.sqlite`。
+SQLite 默认保存在 `./data/dashboard.sqlite`。
 
 ## 验证
 

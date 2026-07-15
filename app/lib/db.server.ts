@@ -18,7 +18,7 @@ import {
   isEncryptionReady,
 } from "~/lib/crypto.server"
 
-const databasePath = process.env.PRICE_ALERT_DB_PATH ?? "./data/price-alert.sqlite"
+const databasePath = process.env.DASHBOARD_DB_PATH ?? "./data/dashboard.sqlite"
 mkdirSync(dirname(databasePath), { recursive: true })
 
 const db = new Database(databasePath, { create: true })

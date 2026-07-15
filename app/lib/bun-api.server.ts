@@ -149,14 +149,14 @@ export async function handleApiRequest(request: Request, pathname: string) {
       const token = body.token?.trim()
       const chatId = body.chatId?.trim()
       if (!token || !chatId) return error("Bot Token 和 Chat ID 均为必填项。")
-      if (!isEncryptionReady()) return error("缺少 PRICE_ALERT_ENCRYPTION_KEY，无法安全保存 Token。", 503)
+      if (!isEncryptionReady()) return error("缺少 DASHBOARD_ENCRYPTION_KEY，无法安全保存 Token。", 503)
       return Response.json({ telegram: await saveTelegramConfiguration(token, chatId) })
     }
     if (pathname === "/api/telegram-settings/test" && request.method === "POST") {
       const settings = await getTelegramCredentials()
       await sendTelegramMessage({
         ...settings,
-        text: "Price Alert 已连接。此消息用于验证 Telegram 推送配置。",
+        text: "Dashboard 已连接。此消息用于验证 Telegram 推送配置。",
       })
       return Response.json({ ok: true })
     }

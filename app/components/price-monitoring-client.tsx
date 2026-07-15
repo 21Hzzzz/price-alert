@@ -393,7 +393,7 @@ export function PriceMonitoringClient() {
     const url = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" }))
     const link = document.createElement("a")
     link.href = url
-    link.download = `price-alert-rules-${new Date().toISOString().slice(0, 10)}.json`
+    link.download = `dashboard-rules-${new Date().toISOString().slice(0, 10)}.json`
     link.click()
     URL.revokeObjectURL(url)
     toast.success(`已导出 ${rules.length} 条规则`)
@@ -450,7 +450,7 @@ export function PriceMonitoringClient() {
           </div><Badge variant="outline" className={telegram.configured ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" : "border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-300"}>{telegram.configured ? "已配置" : "未配置"}</Badge></CardHeader>
           <CardContent className="grid gap-4">
             {!telegram.encryptionReady && (
-              <p className="border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive">服务端缺少 PRICE_ALERT_ENCRYPTION_KEY，暂不能保存 Token。</p>
+              <p className="border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive">服务端缺少 DASHBOARD_ENCRYPTION_KEY，暂不能保存 Token。</p>
             )}
             <div className="grid gap-2">
               <Label htmlFor="bot-token">Bot Token</Label>
@@ -474,7 +474,7 @@ export function PriceMonitoringClient() {
           </div><Badge variant="outline" className={fwalert.configured ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" : "border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-300"}>{fwalert.configured ? "已配置" : "未配置"}</Badge></CardHeader>
           <CardContent className="grid gap-4">
             {!fwalert.encryptionReady && (
-              <p className="border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive">服务端缺少 PRICE_ALERT_ENCRYPTION_KEY，暂不能保存电话链接。</p>
+              <p className="border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive">服务端缺少 DASHBOARD_ENCRYPTION_KEY，暂不能保存电话链接。</p>
             )}
             <div className="grid gap-2">
               <Label htmlFor="fwalert-url">电话推送链接</Label>

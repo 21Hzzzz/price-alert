@@ -8,7 +8,7 @@ RUN bun run build
 FROM oven/bun:1.3-alpine
 WORKDIR /app
 ENV NODE_ENV=production
-ENV PRICE_ALERT_DB_PATH=/data/price-alert.sqlite
+ENV DASHBOARD_DB_PATH=/data/dashboard.sqlite
 COPY --from=build /app/package.json ./
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/build ./build

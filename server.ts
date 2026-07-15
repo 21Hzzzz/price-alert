@@ -60,4 +60,4 @@ Bun.serve({
   },
 })
 
-console.info(`Price Alert is listening on http://localhost:${port}`)
+console.info(`Dashboard is listening on http://localhost:${port}`)
