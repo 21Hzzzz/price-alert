@@ -1,5 +1,5 @@
 import * as React from "react"
-import { Braces, Check, CircleAlert, Code2, ExternalLink, LoaderCircle, LogOut, Send, WalletCards } from "lucide-react"
+import { Braces, Check, CircleAlert, Code2, ExternalLink, LoaderCircle, LogOut, ScanLine, Send, WalletCards } from "lucide-react"
 import { toast } from "sonner"
 
 import {
@@ -15,11 +15,14 @@ import {
 import { Badge } from "~/components/ui/badge"
 import { Button } from "~/components/ui/button"
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "~/components/ui/dialog"
 import { Input } from "~/components/ui/input"
 import { Label } from "~/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select"
 import { Textarea } from "~/components/ui/textarea"
 import { encodeFunctionCalldata, isHexCalldata, parseNativeValue } from "~/lib/contract-calldata"
+import { QrAddressScanner } from "~/components/qr-address-scanner"
+import { extractEvmAddressFromQr } from "~/lib/wallet-address"
 import {
   calculateSweepAmounts,
   formatExactNativeAmount,
@@ -192,6 +195,7 @@ export function WalletClient() {
   const [contractSubmitting, setContractSubmitting] = React.useState(false)
   const [contractConfirmOpen, setContractConfirmOpen] = React.useState(false)
   const [contractTransactionHash, setContractTransactionHash] = React.useState<string | null>(null)
+  const [qrScannerOpen, setQrScannerOpen] = React.useState(false)
 
   const selectedNetwork = NETWORKS.find((network) => network.chainId === Number(selectedChainId)) ?? NETWORKS[0]
   const connectedNetwork = NETWORKS.find((network) => network.chainId === connectedChainId)
@@ -377,6 +381,19 @@ export function WalletClient() {
     }
   }
 
+  const handleQrAddressScan = React.useCallback((value: string) => {
+    const scannedAddress = extractEvmAddressFromQr(value)
+    if (!scannedAddress) {
+      toast.error("二维码中未识别到有效的 EVM 地址。")
+      return false
+    }
+    setDestination(scannedAddress)
+    setPlan(null)
+    setQrScannerOpen(false)
+    toast.success("收款地址已从二维码填入，请继续核对。")
+    return true
+  }, [])
+
   function generateCalldata() {
     try {
       const nextCalldata = encodeFunctionCalldata(functionSignature, functionArguments)
@@ -480,6 +497,21 @@ export function WalletClient() {
         )}
       </section>
 
+      <section aria-label="操作网络" className="flex flex-col gap-4 border bg-muted/20 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-sm font-medium">操作网络</p>
+          <p className="mt-1 text-xs text-muted-foreground">Sweeper 与合约交互会使用同一个网络。</p>
+        </div>
+        <div className="grid gap-2 sm:min-w-64">
+          <Label htmlFor="wallet-network">网络</Label>
+          <Select value={selectedChainId} onValueChange={switchNetwork} disabled={!account}>
+            <SelectTrigger id="wallet-network" className="w-full"><SelectValue /></SelectTrigger>
+            <SelectContent align="end" alignItemWithTrigger={false}>{NETWORKS.map((network) => <SelectItem key={network.chainId} value={String(network.chainId)}>{network.name} · {network.symbol}</SelectItem>)}</SelectContent>
+          </Select>
+          {!account ? <p className="text-xs text-muted-foreground">连接钱包后即可选择并切换网络。</p> : !onSelectedNetwork ? <p className="text-xs text-amber-700 dark:text-amber-400">钱包当前在 {connectedNetwork?.name ?? "未支持网络"}，请先切换到 {selectedNetwork.name}。</p> : null}
+        </div>
+      </section>
+
       <Card>
         <CardHeader className="border-b">
           <CardTitle>原生代币 Sweeper</CardTitle>
@@ -488,16 +520,9 @@ export function WalletClient() {
         </CardHeader>
         <CardContent className="grid gap-5 pt-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
           <div className="grid content-start gap-4">
+            {account && onSelectedNetwork && <div className="grid gap-2"><div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-l-2 border-emerald-500/60 bg-emerald-500/5 px-2 py-1.5 text-xs"><span className="text-muted-foreground">当前余额 · {selectedNetwork.symbol}</span><span className="font-mono break-all">{balanceLoading ? "正在读取…" : nativeBalanceWei === null ? "无法读取余额" : `${formatExactNativeAmount(nativeBalanceWei)} ${selectedNetwork.symbol}`}</span></div>{!strictSweepSupported && <p className="text-xs text-amber-700 dark:text-amber-400">该网络包含额外数据或网络费用，严格归零已安全禁用。</p>}</div>}
             <div className="grid gap-2">
-              <Label htmlFor="wallet-network">网络</Label>
-              <Select value={selectedChainId} onValueChange={switchNetwork} disabled={!account}>
-                <SelectTrigger id="wallet-network" className="w-full"><SelectValue /></SelectTrigger>
-                <SelectContent align="start" alignItemWithTrigger={false}>{NETWORKS.map((network) => <SelectItem key={network.chainId} value={String(network.chainId)}>{network.name} · {network.symbol}</SelectItem>)}</SelectContent>
-              </Select>
-              {!account ? <p className="text-xs text-muted-foreground">连接钱包后即可选择并切换网络。</p> : !onSelectedNetwork ? <p className="text-xs text-amber-700 dark:text-amber-400">钱包当前在 {connectedNetwork?.name ?? "未支持网络"}，请先切换到 {selectedNetwork.name}。</p> : <><div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-l-2 border-emerald-500/60 bg-emerald-500/5 px-2 py-1.5 text-xs"><span className="text-muted-foreground">当前余额 · {selectedNetwork.symbol}</span><span className="font-mono break-all">{balanceLoading ? "正在读取…" : nativeBalanceWei === null ? "无法读取余额" : `${formatExactNativeAmount(nativeBalanceWei)} ${selectedNetwork.symbol}`}</span></div>{!strictSweepSupported && <p className="text-xs text-amber-700 dark:text-amber-400">该网络包含额外数据或网络费用，严格归零已安全禁用。</p>}</>}
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="sweep-destination">收款地址</Label>
+              <div className="flex items-center justify-between gap-3"><Label htmlFor="sweep-destination">收款地址</Label><Button type="button" variant="ghost" size="xs" className="h-auto px-0 py-0 text-muted-foreground hover:bg-transparent hover:text-foreground" onClick={() => setQrScannerOpen(true)}><ScanLine />扫描二维码</Button></div>
               <Input id="sweep-destination" value={destination} onChange={(event) => { setDestination(event.target.value); setPlan(null) }} placeholder="0x…" spellCheck={false} autoComplete="off" />
               <p className="text-xs text-muted-foreground">仅支持普通 EVM 地址（EOA）；合约地址会被严格归零模式拒绝。交易发送后无法撤销，请逐字确认地址。</p>
             </div>
@@ -581,6 +606,16 @@ export function WalletClient() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={qrScannerOpen} onOpenChange={setQrScannerOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>扫描收款地址二维码</DialogTitle>
+            <DialogDescription>允许摄像头后，将 EVM 地址二维码置于取景框内。识别成功后会填入地址，但不会自动发送交易。</DialogDescription>
+          </DialogHeader>
+          {qrScannerOpen && <QrAddressScanner onScan={handleQrAddressScan} />}
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={contractConfirmOpen} onOpenChange={setContractConfirmOpen}>
         <AlertDialogContent>
